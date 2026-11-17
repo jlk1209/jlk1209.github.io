@@ -625,7 +625,7 @@ body.trace-open #traceToggle{color:var(--red);border-bottom-color:var(--red)}
           <span id="hintLeft">Enter 发送 · Shift + Enter 换行</span>
           <span class="links">
             <span class="vaux" aria-label="语音播报">
-              <button id="voiceAuto" aria-pressed="false" title="开启后每次回答自动朗读">自动播报</button>
+              <button id="voiceAuto" aria-pressed="true" title="默认开启：每条回答自动朗读">自动播报</button>
               <button id="voiceRate" title="切换朗读语速">1.0×</button>
             </span>
             <button id="traceToggle">决策轨迹</button>
@@ -1740,8 +1740,11 @@ $('#resetChat').addEventListener('click', ()=>{
 
 
 /* ===== v7 · 离线语音播报（Web Speech，本地系统音色，不联网） ===== */
-let VOICE_ON = false, VOICE_AUTO = false, VOICE_RATE = 1.0;
+let VOICE_ON = false, VOICE_AUTO = true, VOICE_RATE = 1.0, VOICE_ARMED = false;
 const VOICE_RATES = [0.8, 1.0, 1.2];
+['pointerdown', 'keydown'].forEach(function(t){
+  window.addEventListener(t, function(){ VOICE_ARMED = true; }, { once: true, passive: true });
+});
 function updateSpeakBtns(){
   document.querySelectorAll('.speak').forEach(function(b){
     b.classList.toggle('on', VOICE_ON);
@@ -1760,6 +1763,7 @@ function stopSpeak(){
 }
 function speakArticle(article, auto){
   if(!('speechSynthesis' in window)) return;
+  if(auto && !VOICE_ARMED) return;
   if(VOICE_ON && !auto){ stopSpeak(); return; }
   speechSynthesis.cancel();
   const parts = Array.from(article.querySelectorAll('h3,.body p,.fact,.meta,.foot span'))
@@ -1787,6 +1791,7 @@ renderRoute();
 $('#kbStat').textContent = KB.length + ' 条';
 $('#kbStatTop').textContent = KB.length + ' 条';
 $('#traceSteps').innerHTML = '<div class="step"><div class="v">随时开始 · 轨迹将在此写入</div></div>';
+updateSpeakBtns();
 setMode('guide');
 setStatus('就绪');
 };
