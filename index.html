@@ -1747,6 +1747,7 @@ const VOICE_RATES = [0.8, 1.0, 1.2];
 const VOICE_PITCH = 1.08;
 let VOICE_LIST = [], VOICE_PICK = 0, VOICE_QUEUE = [], VOICE_TIMER = null;
 const VOICE_SOFT = ['xiaoxiao','xiaoyi','yaoyao','huihui','tingting','xiaomeng','xiaohan','xiaomo','xiaoxuan','xiaorui','xiaoshuang','xiaobei','xiaotong','yen','natural','neural','google'];
+const VOICE_CUTE = ['yaoyao','xiaoyi','xiaomeng','xiaoxuan','xiaotong','xiaobei','xiaohan','xiaomo'];
 const VOICE_HARD = ['kangkang','yunjian','yunxi','yunyang','yunhao','yunye','yunfeng','yunze','zhichao','male','danny','liang'];
 ['pointerdown', 'keydown'].forEach(function(t){
   window.addEventListener(t, function(){ VOICE_ARMED = true; }, { once: true, passive: true });
@@ -1771,12 +1772,14 @@ function rankVoices(){
     const n = (v.name || '').toLowerCase();
     let sc = 0;
     VOICE_SOFT.forEach(function(h){ if(n.indexOf(h) >= 0) sc += 3; });
+    VOICE_CUTE.forEach(function(h){ if(n.indexOf(h) >= 0) sc += 3; });
     VOICE_HARD.forEach(function(h){ if(n.indexOf(h) >= 0) sc -= 6; });
-    if(/natural|neural|online/.test(n)) sc += 2;
+    if(/natural|neural|online/.test(n)) sc += 4;
     if(/zh-cn|cmn-hans|mainland/.test(((v.lang || '') + ' ' + n).toLowerCase())) sc += 1;
     return { v: v, s: sc };
   }).sort(function(a, b){ return b.s - a.s; });
-  VOICE_LIST = scored.map(function(x){ return x.v; });
+  const good = scored.filter(function(x){ return x.s >= 0; });
+  VOICE_LIST = (good.length ? good : scored).map(function(x){ return x.v; });
   if(VOICE_PICK >= VOICE_LIST.length) VOICE_PICK = 0;
   updateSpeakBtns();
 }
