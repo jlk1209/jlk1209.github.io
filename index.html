@@ -507,11 +507,28 @@ body.trace-open #traceToggle{color:var(--red);border-bottom-color:var(--red)}
 .trace .step:nth-child(6){animation-delay:.18s}
 .trace .step:nth-child(7){animation-delay:.21s}
 
-.speak{background:none;border:1px solid rgba(207,194,171,.22);border-radius:999px;width:22px;height:22px;
-  display:inline-flex;align-items:center;justify-content:center;color:#b6a583;cursor:pointer;padding:0;margin-left:auto;flex:none}
-.speak svg{width:13px;height:13px}
-.speak:hover{color:#f0e4cf;border-color:rgba(207,194,171,.5)}
-.speak.on{color:var(--red);border-color:var(--red);animation:pulse 1.2s ease-in-out infinite}
+.speak{background:none;border:1px solid rgba(207,194,171,.26);border-radius:999px;
+  display:inline-flex;align-items:center;gap:5px;color:#b6a583;cursor:pointer;
+  padding:3px 10px 3px 7px;margin-left:auto;flex:none;font:inherit;font-size:12px;line-height:1;
+  letter-spacing:.03em;transition:color .18s,border-color .18s,background .18s}
+.speak svg{width:12px;height:12px;flex:none}
+.speak .lb{white-space:nowrap}
+.speak .vbars{display:inline-flex;gap:2px;align-items:flex-end;height:9px;width:0;overflow:hidden;transition:width .2s}
+.speak .vbars i{width:2px;height:3px;border-radius:1px;background:currentColor}
+.speak:hover{color:#f0e4cf;border-color:rgba(207,194,171,.55)}
+.speak.on{color:var(--red);border-color:rgba(176,37,28,.55);background:rgba(176,37,28,.07)}
+.speak.on .vbars{width:11px}
+.speak.on .vbars i{animation:vbars .7s ease-in-out infinite}
+.speak.on .vbars i:nth-child(2){animation-delay:.14s}
+.speak.on .vbars i:nth-child(3){animation-delay:.28s}
+@keyframes vbars{0%,100%{height:3px}50%{height:9px}}
+.vaux{display:inline-flex;align-items:center;gap:6px;margin-left:4px}
+.vaux button{font:inherit;font-size:12px;line-height:1;letter-spacing:.03em;color:#8d7d62;
+  background:none;border:1px solid rgba(207,194,171,.22);border-radius:999px;padding:4px 9px;cursor:pointer;
+  transition:color .18s,border-color .18s,background .18s}
+.vaux button:hover{color:#f0e4cf;border-color:rgba(207,194,171,.5)}
+.vaux button[aria-pressed="true"]{color:var(--red);border-color:rgba(176,37,28,.55);background:rgba(176,37,28,.07)}
+.vaux #voiceRate{min-width:44px;text-align:center}
 
 .composer textarea,.composer input{transition:border-color .2s,box-shadow .2s}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -607,6 +624,10 @@ body.trace-open #traceToggle{color:var(--red);border-bottom-color:var(--red)}
         <div class="hint">
           <span id="hintLeft">Enter 发送 · Shift + Enter 换行</span>
           <span class="links">
+            <span class="vaux" aria-label="语音播报">
+              <button id="voiceAuto" aria-pressed="false" title="开启后每次回答自动朗读">自动播报</button>
+              <button id="voiceRate" title="切换朗读语速">1.0×</button>
+            </span>
             <button id="traceToggle">决策轨迹</button>
             <button id="openKb">知识库检索</button>
             <button id="openAbout">技术说明</button>
@@ -908,7 +929,7 @@ function footHTML(e, conf, extra){
     '<span class="'+LV_CLASS(e.lv)+'">'+esc(e.lv||'知识库条目')+'</span>'+
     '<span>检索置信 '+(conf*100).toFixed(0)+'%</span>'+
     (extra?'<span>'+esc(extra)+'</span>':'')+
-    '<button class="speak" aria-label="朗读回答" title="离线语音朗读">'+SPEAK_ICON+'</button></div>';
+    '<button class="speak" aria-label="朗读回答" title="离线语音朗读">'+SPEAK_ICON+'<span class="vbars"><i></i><i></i><i></i></span><span class="lb">朗读</span></button></div>';
 }
 
 
@@ -1408,8 +1429,13 @@ function addNote(text){
   scrollBottom();
 }
 function addHTML(html){
-  $('#chatInner').appendChild(wrap(html));
+  const node = wrap(html);
+  $('#chatInner').appendChild(node);
   scrollBottom();
+  if(VOICE_AUTO && node){
+    const art = node.matches('article') ? node : node.querySelector('article');
+    if(art) setTimeout(function(){ speakArticle(art, true); }, 320);
+  }
 }
 function scrollBottom(){
   const c = $('#chat');
@@ -1713,28 +1739,47 @@ $('#resetChat').addEventListener('click', ()=>{
 });
 
 
-/* ===== v6 · 离线语音朗读（Web Speech，本地系统音色，不联网） ===== */
-let VOICE_ON = false;
+/* ===== v7 · 离线语音播报（Web Speech，本地系统音色，不联网） ===== */
+let VOICE_ON = false, VOICE_AUTO = false, VOICE_RATE = 1.0;
+const VOICE_RATES = [0.8, 1.0, 1.2];
 function updateSpeakBtns(){
-  document.querySelectorAll('.speak').forEach(function(b){ b.classList.toggle('on', VOICE_ON); });
+  document.querySelectorAll('.speak').forEach(function(b){
+    b.classList.toggle('on', VOICE_ON);
+    const lb = b.querySelector('.lb');
+    if(lb) lb.textContent = VOICE_ON ? '停止' : '朗读';
+  });
+  const va = document.getElementById('voiceAuto');
+  if(va){ va.classList.toggle('on', VOICE_AUTO); va.setAttribute('aria-pressed', VOICE_AUTO ? 'true' : 'false'); }
+  const vr = document.getElementById('voiceRate');
+  if(vr) vr.textContent = VOICE_RATE.toFixed(1) + '×';
 }
-function speakArticle(article){
+function stopSpeak(){
+  if('speechSynthesis' in window) speechSynthesis.cancel();
+  VOICE_ON = false;
+  updateSpeakBtns();
+}
+function speakArticle(article, auto){
   if(!('speechSynthesis' in window)) return;
-  if(VOICE_ON){ speechSynthesis.cancel(); VOICE_ON=false; updateSpeakBtns(); return; }
+  if(VOICE_ON && !auto){ stopSpeak(); return; }
   speechSynthesis.cancel();
-  const parts = Array.from(article.querySelectorAll('h3,.body p,.fact,.meta,.foot span')).map(function(x){return x.textContent;});
+  const parts = Array.from(article.querySelectorAll('h3,.body p,.fact,.meta,.foot span'))
+    .map(function(x){ return (x.textContent || '').trim(); })
+    .filter(Boolean);
+  if(!parts.length) return;
   const u = new SpeechSynthesisUtterance(parts.join('。'));
-  u.lang='zh-CN'; u.rate=0.95; u.pitch=1;
-  u.onend=function(){ VOICE_ON=false; updateSpeakBtns(); };
-  u.onerror=function(){ VOICE_ON=false; updateSpeakBtns(); };
-  VOICE_ON=true; updateSpeakBtns();
+  u.lang = 'zh-CN'; u.rate = VOICE_RATE; u.pitch = 1;
+  u.onend = u.onerror = function(){ VOICE_ON = false; updateSpeakBtns(); };
+  VOICE_ON = true;
+  updateSpeakBtns();
   speechSynthesis.speak(u);
 }
 document.addEventListener('click', function(ev){
   const b = ev.target.closest('.speak');
-  if(!b) return;
-  const art = b.closest('article');
-  if(art) speakArticle(art);
+  if(b){ const art = b.closest('article'); if(art) speakArticle(art); return; }
+  const va = ev.target.closest('#voiceAuto');
+  if(va){ VOICE_AUTO = !VOICE_AUTO; if(!VOICE_AUTO) stopSpeak(); updateSpeakBtns(); return; }
+  const vr = ev.target.closest('#voiceRate');
+  if(vr){ const i = VOICE_RATES.indexOf(VOICE_RATE); VOICE_RATE = VOICE_RATES[(i + 1) % VOICE_RATES.length]; if(VOICE_ON) stopSpeak(); updateSpeakBtns(); }
 });
 
 /* 启动 */
