@@ -529,6 +529,7 @@ body.trace-open #traceToggle{color:var(--red);border-bottom-color:var(--red)}
 .vaux button:hover{color:#f0e4cf;border-color:rgba(207,194,171,.5)}
 .vaux button[aria-pressed="true"]{color:var(--red);border-color:rgba(176,37,28,.55);background:rgba(176,37,28,.07)}
 .vaux #voiceRate{min-width:44px;text-align:center}
+.vaux #voiceTone{min-width:56px;text-align:center}
 
 .composer textarea,.composer input{transition:border-color .2s,box-shadow .2s}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -626,6 +627,7 @@ body.trace-open #traceToggle{color:var(--red);border-bottom-color:var(--red)}
           <span class="links">
             <span class="vaux" aria-label="语音播报">
               <button id="voiceAuto" aria-pressed="true" title="默认开启：每条回答自动朗读">自动播报</button>
+              <button id="voiceTone" title="切换朗读音色">音色</button>
               <button id="voiceRate" title="切换朗读语速">1.0×</button>
             </span>
             <button id="traceToggle">决策轨迹</button>
@@ -1739,12 +1741,45 @@ $('#resetChat').addEventListener('click', ()=>{
 });
 
 
-/* ===== v7 · 离线语音播报（Web Speech，本地系统音色，不联网） ===== */
+/* ===== v8 · 离线语音播报（自动挑选柔和女声 + 句间自然停顿） ===== */
 let VOICE_ON = false, VOICE_AUTO = true, VOICE_RATE = 1.0, VOICE_ARMED = false;
 const VOICE_RATES = [0.8, 1.0, 1.2];
+const VOICE_PITCH = 1.08;
+let VOICE_LIST = [], VOICE_PICK = 0, VOICE_QUEUE = [], VOICE_TIMER = null;
+const VOICE_SOFT = ['xiaoxiao','xiaoyi','yaoyao','huihui','tingting','xiaomeng','xiaohan','xiaomo','xiaoxuan','xiaorui','xiaoshuang','xiaobei','xiaotong','yen','natural','neural','google'];
+const VOICE_HARD = ['kangkang','yunjian','yunxi','yunyang','yunhao','yunye','yunfeng','yunze','zhichao','male','danny','liang'];
 ['pointerdown', 'keydown'].forEach(function(t){
   window.addEventListener(t, function(){ VOICE_ARMED = true; }, { once: true, passive: true });
 });
+function voiceShort(v){
+  if(!v) return '音色';
+  let n = (v.name || '').replace(/Microsoft\s+/i, '');
+  n = n.replace(/（[^）]*）/g, '').replace(/\([^)]*\)/g, '');
+  n = n.replace(/\s*[-–—]\s*Chinese[^,，]*$/i, '');
+  n = n.replace(/Online|Natural|Neural/gi, '').replace(/\s+/g, '').trim();
+  if(!n) n = '音色';
+  return n.length > 8 ? n.slice(0, 7) + '…' : n;
+}
+function rankVoices(){
+  if(!('speechSynthesis' in window)) return;
+  let all = [];
+  try { all = speechSynthesis.getVoices() || []; } catch(e) { all = []; }
+  const zh = all.filter(function(v){
+    return /zh|cmn|Chinese|中文|普通话|國語|国语/i.test(((v.lang || '') + ' ' + (v.name || '')));
+  });
+  const scored = zh.map(function(v){
+    const n = (v.name || '').toLowerCase();
+    let sc = 0;
+    VOICE_SOFT.forEach(function(h){ if(n.indexOf(h) >= 0) sc += 3; });
+    VOICE_HARD.forEach(function(h){ if(n.indexOf(h) >= 0) sc -= 6; });
+    if(/natural|neural|online/.test(n)) sc += 2;
+    if(/zh-cn|cmn-hans|mainland/.test(((v.lang || '') + ' ' + n).toLowerCase())) sc += 1;
+    return { v: v, s: sc };
+  }).sort(function(a, b){ return b.s - a.s; });
+  VOICE_LIST = scored.map(function(x){ return x.v; });
+  if(VOICE_PICK >= VOICE_LIST.length) VOICE_PICK = 0;
+  updateSpeakBtns();
+}
 function updateSpeakBtns(){
   document.querySelectorAll('.speak').forEach(function(b){
     b.classList.toggle('on', VOICE_ON);
@@ -1755,33 +1790,73 @@ function updateSpeakBtns(){
   if(va){ va.classList.toggle('on', VOICE_AUTO); va.setAttribute('aria-pressed', VOICE_AUTO ? 'true' : 'false'); }
   const vr = document.getElementById('voiceRate');
   if(vr) vr.textContent = VOICE_RATE.toFixed(1) + '×';
+  const vt = document.getElementById('voiceTone');
+  if(vt){
+    vt.textContent = VOICE_LIST.length ? voiceShort(VOICE_LIST[VOICE_PICK]) : '音色';
+    vt.title = VOICE_LIST.length ? (VOICE_LIST[VOICE_PICK].name || '当前音色') + '（点击切换）' : '未检测到中文音色，请检查系统语音包';
+  }
 }
-function stopSpeak(){
-  if('speechSynthesis' in window) speechSynthesis.cancel();
-  VOICE_ON = false;
-  updateSpeakBtns();
+function voiceSegments(article){
+  const parts = Array.from(article.querySelectorAll('h3,.body p,.fact'))
+    .map(function(x){ return (x.textContent || '').replace(/\s+/g, ' ').trim(); })
+    .filter(Boolean);
+  const text = parts.join('。');
+  const out = [];
+  const re = /[^。！？；!?;]+[。！？；!?;]?/g;
+  let m;
+  while((m = re.exec(text))){
+    let s = m[0].trim();
+    if(!s) continue;
+    while(s.length > 110){
+      let cut = s.lastIndexOf('，', 110);
+      if(cut < 40) cut = s.lastIndexOf('、', 110);
+      if(cut < 40) cut = 110;
+      out.push({ text: s.slice(0, cut + 1), gap: 170 });
+      s = s.slice(cut + 1).trim();
+    }
+    if(s) out.push({ text: s, gap: /[。！？!?]$/.test(s) ? 320 : (/[；;]$/.test(s) ? 200 : 240) });
+  }
+  return out;
 }
+function voiceCancel(){
+  if(VOICE_TIMER){ clearTimeout(VOICE_TIMER); VOICE_TIMER = null; }
+  VOICE_QUEUE = [];
+  try { if('speechSynthesis' in window) speechSynthesis.cancel(); } catch(e) {}
+}
+function voiceNext(){
+  if(!VOICE_QUEUE.length){ VOICE_ON = false; updateSpeakBtns(); return; }
+  const seg = VOICE_QUEUE.shift();
+  const u = new SpeechSynthesisUtterance(seg.text);
+  u.lang = 'zh-CN'; u.rate = VOICE_RATE; u.pitch = VOICE_PITCH; u.volume = 1;
+  if(VOICE_LIST.length){ const v = VOICE_LIST[VOICE_PICK]; if(v) u.voice = v; }
+  u.onend = function(){ VOICE_TIMER = setTimeout(voiceNext, seg.gap); };
+  u.onerror = function(){ if(!VOICE_QUEUE.length){ VOICE_ON = false; updateSpeakBtns(); } };
+  speechSynthesis.speak(u);
+}
+function stopSpeak(){ voiceCancel(); VOICE_ON = false; updateSpeakBtns(); }
 function speakArticle(article, auto){
   if(!('speechSynthesis' in window)) return;
   if(auto && !VOICE_ARMED) return;
   if(VOICE_ON && !auto){ stopSpeak(); return; }
-  speechSynthesis.cancel();
-  const parts = Array.from(article.querySelectorAll('h3,.body p,.fact,.meta,.foot span'))
-    .map(function(x){ return (x.textContent || '').trim(); })
-    .filter(Boolean);
-  if(!parts.length) return;
-  const u = new SpeechSynthesisUtterance(parts.join('。'));
-  u.lang = 'zh-CN'; u.rate = VOICE_RATE; u.pitch = 1;
-  u.onend = u.onerror = function(){ VOICE_ON = false; updateSpeakBtns(); };
+  voiceCancel();
+  VOICE_QUEUE = voiceSegments(article);
+  if(!VOICE_QUEUE.length) return;
   VOICE_ON = true;
   updateSpeakBtns();
-  speechSynthesis.speak(u);
+  voiceNext();
+}
+if('speechSynthesis' in window){
+  rankVoices();
+  try { speechSynthesis.addEventListener('voiceschanged', rankVoices); } catch(e) {}
+  speechSynthesis.onvoiceschanged = rankVoices;
 }
 document.addEventListener('click', function(ev){
   const b = ev.target.closest('.speak');
   if(b){ const art = b.closest('article'); if(art) speakArticle(art); return; }
   const va = ev.target.closest('#voiceAuto');
   if(va){ VOICE_AUTO = !VOICE_AUTO; if(!VOICE_AUTO) stopSpeak(); updateSpeakBtns(); return; }
+  const vt = ev.target.closest('#voiceTone');
+  if(vt){ if(VOICE_LIST.length){ VOICE_PICK = (VOICE_PICK + 1) % VOICE_LIST.length; if(VOICE_ON) stopSpeak(); updateSpeakBtns(); } return; }
   const vr = ev.target.closest('#voiceRate');
   if(vr){ const i = VOICE_RATES.indexOf(VOICE_RATE); VOICE_RATE = VOICE_RATES[(i + 1) % VOICE_RATES.length]; if(VOICE_ON) stopSpeak(); updateSpeakBtns(); }
 });
