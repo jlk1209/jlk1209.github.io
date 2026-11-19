@@ -428,10 +428,11 @@ dialog#kb .ki .r2{font-size:11.5px;color:var(--text-dim);line-height:1.7;margin-
 }
 
 /* ===== v3 · 简化与收束 ===== */
-.app{grid-template-columns:220px minmax(0,1fr)}
-.rail{background:#0f0c09}
-.brand{padding:22px 18px 16px}
-.brand h1{font-size:21px;letter-spacing:.08em}
+@media (min-width:861px){
+  .app{grid-template-columns:220px minmax(0,1fr)}
+  .brand{padding:22px 18px 16px}
+  .brand h1{font-size:21px;letter-spacing:.08em}
+}
 .brand .span{margin-top:10px;padding-top:8px;font-size:10.5px;opacity:.85}
 .modes{padding:16px 10px 8px;gap:0}
 .modes .label{padding:0 12px 8px}
@@ -567,6 +568,48 @@ body.trace-open #traceToggle{color:var(--red);border-bottom-color:var(--red)}
 @keyframes draw{to{stroke-dashoffset:0}}
 @keyframes flow{to{stroke-dashoffset:-112}}
 @keyframes glowPulse{0%,100%{opacity:.12;transform:scale(1)}50%{opacity:.3;transform:scale(1.3)}}
+
+/* ===== v10 · 手机竖屏适配（≤860px 单列 + 顶部横条） ===== */
+@media (max-width:860px){
+  body{overflow-x:hidden;overflow-y:auto}
+  .app{grid-template-columns:1fr!important;grid-template-rows:auto auto 1fr;height:auto;min-height:100vh;width:100%;max-width:100vw;overflow-x:hidden}
+  .rail,.stage,.rail .route,.chat,.stage-head,.dossier{min-width:0;max-width:100%}
+  .rail{flex-direction:column;min-height:0;border-right:0;border-bottom:1px solid rgba(207,194,171,.16);overflow-x:hidden}
+  .brand{padding:13px 16px 10px;border-bottom:0;display:flex;flex-wrap:wrap;align-items:baseline;gap:10px}
+  .brand .mark{gap:7px}
+  .brand .mark svg{width:15px;height:15px}
+  .brand h1{font-size:18px;letter-spacing:.09em}
+  .brand .role{margin:0;font-size:10px;letter-spacing:.16em}
+  .brand .span{display:none}
+  .modes{flex-direction:row;flex-wrap:wrap;padding:0 12px 10px;gap:6px}
+  .modes .label{display:none}
+  .modes button{width:auto!important;grid-template-columns:auto 1fr;padding:6px 10px;border-left:0;border-bottom:2px solid transparent;font-size:12.5px;gap:6px}
+  .modes button[aria-current="true"]{border-left:0;border-bottom-color:var(--red);background:linear-gradient(180deg,rgba(176,37,28,.16),transparent)}
+  .rail .route{display:flex!important;flex-direction:row;flex:none;overflow-x:auto;overflow-y:hidden;padding:0 12px 10px;gap:6px;scroll-snap-type:x proximity}
+  .rail .route .label,.rail .route .line,.rail .route button .dot,.rail .route button .yr{display:none}
+  .rail .route button{width:auto;flex:none;padding:6px 11px;border:1px solid rgba(207,194,171,.24);border-radius:999px;font-size:11.5px;white-space:nowrap;color:#a99a80}
+  .rail .route button[aria-current="true"]{border-color:var(--red);color:#fbf3e2;background:rgba(176,37,28,.12)}
+  .rail-foot{padding:8px 14px 11px;display:flex;flex-wrap:wrap;gap:12px;border-top:0;font-size:10px}
+  .rail-foot .kv{display:inline-flex;gap:6px}
+  .stage{min-height:calc(100vh - 168px);overflow:visible}
+  .stage-head{padding:16px 16px 8px;flex-direction:column;align-items:flex-start;gap:6px}
+  .stage-head .badge{order:2;border:0;background:none;padding:0;gap:7px;box-shadow:none;align-items:center}
+  .stage-head .badge .n{font-size:15px}
+  .stage-head .badge .txt{font-size:9.5px;line-height:1.4}
+  .stage-head .titles h2{font-size:19px;line-height:1.35}
+  .stage-head .titles p{font-size:12px}
+  .chat{padding:0 14px}
+  .composer{padding:8px 14px 12px}
+  .dossier .meta{font-size:11px;letter-spacing:.04em}
+  .answer,.dossier .body{font-size:13px;line-height:1.85}
+  .cards{grid-template-columns:1fr!important}
+  .trace{width:92vw;right:0}
+}
+@media (max-width:420px){
+  .brand h1{font-size:16px}
+  .stage-head .titles h2{font-size:17px}
+  .chat{padding:0 12px}
+}
 </style>
 </head>
 <body>
@@ -594,6 +637,7 @@ body.trace-open #traceToggle{color:var(--red);border-bottom-color:var(--red)}
     <div class="rail-foot">
       <div class="kv"><span>知识库</span><b id="kbStatTop">—</b></div>
       <div class="kv"><span>版本</span><b>KB 3.6</b></div>
+      <div class="kv"><span>功能</span><b>v9 问法归一</b></div>
       <div class="kv"><span>运行</span><b>离线可用</b></div>
     </div>
   </aside>
@@ -681,6 +725,7 @@ body.trace-open #traceToggle{color:var(--red);border-bottom-color:var(--red)}
     </div>
     <h4>三、技术要点</h4>
     <p>· <strong>可解释</strong>：右侧轨迹面板实时显示意图、置信度、Top-K 命中与生成模板编号，全链路可审计。<br>
+    · <strong>问法归一</strong>：同一问题的不同说法先归一再检索——同义替换表（别称、口语疑问、近义表述，近百组）、条目名自动展开的可能问法索引（一万多条）、无实体名的主题规则，以及闲聊口头版的让位；25 个主题 77 种说法实测全部答到对应条目、0 次兜底。<br>
     · <strong>抗幻觉</strong>：知识库前置、模板后置，生成只做“重组”不做“编造”；每条事实带史料等级（权威史料 / 回忆录记述 / 文学改编）。<br>
     · <strong>多轮记忆</strong>：保留上一轮实体，支持“它为什么重要”“那后来呢”这类省略式追问。<br>
     · <strong>零依赖运行</strong>：单文件、无后端、无外部接口，断网可用，适合展馆离线大屏与乡村学校机房。</p>
@@ -709,6 +754,17 @@ body.trace-open #traceToggle{color:var(--red);border-bottom-color:var(--red)}
     <p style="margin-top:8px">史料来源以中央党史和文献研究院、人民网党史频道、共产党员网、新华社等公开权威文本为主；回忆录与文学作品单独标注等级，不与权威史料混用。</p>
     <h4>五、使用建议</h4>
     <p>课堂：用「路线讲解」串起一节 40 分钟的历史课；展馆：观众点地图上的站，讲解员自动开讲；研学：用「任务规划」生成行程与任务单；创作：用「人物对话」做情景剧脚本初稿。</p>
+    <h4>六、版本记录</h4>
+    <table>
+      <colgroup><col style="width:12%"><col style="width:24%"><col style="width:64%"></colgroup>
+      <tr><th>版本</th><th>节点</th><th>主要变化</th></tr>
+      <tr><td>v1–v3</td><td>骨架与路线</td><td>四种模式、13 站路线长卷、检索与模板生成、可解释轨迹</td></tr>
+      <tr><td>v4–v5</td><td>知识库扩容</td><td>条目扩至 474 条并入图谱，加史实等级与出处、零编造兜底</td></tr>
+      <tr><td>v6</td><td>图画与档案</td><td>内联 SVG 图画（路线长卷、会议、桥、雪山、草地）、档案卡版式</td></tr>
+      <tr><td>v7</td><td>对手与人物故事</td><td>对手人物、追剿军、封锁线、各阶段交锋；毛泽东等人物故事情节写入</td></tr>
+      <tr><td>v8</td><td>离线语音播报</td><td>朗读／停止、自动播报（默认开）、三档语速、柔和甜美女声优先并剔除男声</td></tr>
+      <tr><td>v9</td><td>问法归一</td><td>同义替换、可能问法索引、主题规则、变体让位；知识库 1122 条 · 16 类，回归 60 条用例全过</td></tr>
+    </table>
   </div>
 </dialog>
 
@@ -1736,7 +1792,7 @@ function introGuide(){
   c.innerHTML = '';
   addHTML(
     '<article class="dossier">'+
-      '<div class="kick"><span class="tag">长征星火 · 讲解员</span><span>KB 3.6 · '+KB.length+' 条可溯源</span></div>'+
+      '<div class="kick"><span class="tag">长征星火 · 讲解员</span><span>KB 3.6 · v9 问法归一 · '+KB.length+' 条可溯源</span></div>'+
       '<h3>长征，一站一站讲给你听</h3>'+
       '<div class="meta">1934.10 于都出发 → 1936.10 会师 · 二万五千里</div>'+
       '<div class="hero-art">'+HERO_SVG()+'</div>'+
