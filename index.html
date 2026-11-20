@@ -678,7 +678,7 @@ dialog#net .tip{font-size:11px;color:#7a6d59;line-height:1.75;margin-top:12px;pa
     <div class="rail-foot">
       <div class="kv"><span>知识库</span><b id="kbStatTop">—</b></div>
       <div class="kv"><span>版本</span><b>KB 3.7</b></div>
-      <div class="kv"><span>功能</span><b>v12 双模式＋问答卡</b></div>
+      <div class="kv"><span>功能</span><b>v13 普通话柔声</b></div>
       <div class="kv"><span>运行</span><b>离线可用</b></div>
     </div>
   </aside>
@@ -812,6 +812,7 @@ dialog#net .tip{font-size:11px;color:#7a6d59;line-height:1.75;margin-top:12px;pa
       <tr><td>v10</td><td>手机竖屏</td><td>单列布局、站点横向滑动条、390 宽无横向溢出；补版本记录页</td></tr>
       <tr><td>v11</td><td>离线／联网双模式</td><td>默认离线；联网模式用自带 Key 直连大模型改写答案，标注来源，失败自动回退；63 条用例全过</td></tr>
       <tr><td>v12</td><td>知识库再扩容</td><td>新增 160 条具体档案（渡口、阻击阵地、遗址、番号、文献、人物、数据）与 1150 条问答卡；条目 2432 条 · 17 类，回归 68 条用例全过</td></tr>
+      <tr><td>v13</td><td>普通话柔声</td><td>音色只保留普通话音色，粤语、台湾国语、外语与男声一律自动排除；语速默认 0.9×、音调 0.95、句间停顿加长，朗读更轻更慢；回归 70 条用例全过</td></tr>
     </table>
   </div>
 </dialog>
@@ -2162,14 +2163,25 @@ $('#resetChat').addEventListener('click', ()=>{
 });
 
 
-/* ===== v8 · 离线语音播报（自动挑选柔和女声 + 句间自然停顿） ===== */
-let VOICE_ON = false, VOICE_AUTO = true, VOICE_RATE = 1.0, VOICE_ARMED = false;
-const VOICE_RATES = [0.8, 1.0, 1.2];
-const VOICE_PITCH = 1.08;
+/* ===== v8 · 离线语音播报｜v13 · 只播普通话 + 温柔参数（音调压低、语速放慢、句间留白） ===== */
+let VOICE_ON = false, VOICE_AUTO = true, VOICE_RATE = 0.9, VOICE_ARMED = false;
+const VOICE_RATES = [0.9, 1.0, 0.8];
+const VOICE_PITCH = 0.95;   /* 温柔：略压低音调，避免尖细 */
 let VOICE_LIST = [], VOICE_PICK = 0, VOICE_QUEUE = [], VOICE_TIMER = null;
-const VOICE_SOFT = ['xiaoxiao','xiaoyi','yaoyao','huihui','tingting','xiaomeng','xiaohan','xiaomo','xiaoxuan','xiaorui','xiaoshuang','xiaobei','xiaotong','yen','natural','neural','google','晓晓','晓伊','瑶瑶','慧慧','婷婷','晓梦','晓萱','晓彤','晓涵','晓墨','晓双','晓北','暖暖','晓雅','晓秋'];
+const VOICE_SOFT = ['xiaoxiao','xiaoyi','xiaohan','xiaomeng','xiaoxuan','xiaomo','xiaoshuang','xiaobei','xiaotong','xiaorui','xiaoyan','xiaoshu','yaoyao','huihui','tingting','natural','neural','google','晓晓','晓伊','晓涵','晓梦','晓萱','晓墨','晓双','晓北','晓彤','晓睿','晓颜','晓舒','瑶瑶','慧慧','婷婷','暖暖','晓雅','晓秋'];
 const VOICE_CUTE = ['yaoyao','xiaoyi','xiaomeng','xiaoxuan','xiaotong','xiaobei','xiaohan','xiaomo','瑶瑶','晓伊','晓梦','晓彤','晓北','暖暖'];
-const VOICE_HARD = ['kangkang','yunjian','yunxi','yunyang','yunhao','yunye','yunfeng','yunze','zhichao','male','danny','liang','云希','云健','云扬','云皓','云野','云峰','云泽','云舟','云帆','云枫','康康','志超'];
+const VOICE_HARD = ['kangkang','yunjian','yunxi','yunyang','yunhao','yunye','yunfeng','yunze','yunze','zhichao','male','danny','liang','kangkang','云希','云健','云扬','云皓','云野','云峰','云泽','云舟','云帆','云枫','康康','志超',
+  'yue','zh-hk','zh-tw','zh-mo','zh-yue','wuu','nan','hak','cantonese','粤','粤语','广东话','香港','臺灣','台湾','國語','國语','闽南','客家','台语','閩南'];
+/* 只播普通话：候选音色必须是大陆普通话（zh-CN / cmn / zh-Hans），
+   方言、台湾国语、男声、外语一律排除，宁可无音色也不退到非普通话。 */
+function voiceIsMandarin(v){
+  const lang = String((v && v.lang) || '').toLowerCase().replace(/_/g, '-');
+  const nm = String((v && v.name) || '');
+  const probe = (lang + ' ' + nm).toLowerCase();
+  if(VOICE_HARD.some(function(k){ return probe.indexOf(String(k).toLowerCase()) >= 0; })) return false;
+  if(/^(zh-cn|zh-hans|cmn|zh-sg)/.test(lang)) return true;
+  return /普通话|中文（中国|中文\(中国|chinese \(simplified|chinese \(mainland/.test(nm.toLowerCase());
+}
 ['pointerdown', 'keydown'].forEach(function(t){
   window.addEventListener(t, function(){ VOICE_ARMED = true; }, { once: true, passive: true });
 });
@@ -2186,21 +2198,18 @@ function rankVoices(){
   if(!('speechSynthesis' in window)) return;
   let all = [];
   try { all = speechSynthesis.getVoices() || []; } catch(e) { all = []; }
-  const zh = all.filter(function(v){
-    return /zh|cmn|Chinese|中文|普通话|國語|国语/i.test(((v.lang || '') + ' ' + (v.name || '')));
-  });
-  const scored = zh.map(function(v){
+  const cn = all.filter(voiceIsMandarin);
+  const scored = cn.map(function(v){
     const n = (v.name || '').toLowerCase();
-    let sc = 0, male = false;
+    let sc = 0;
     VOICE_SOFT.forEach(function(h){ if(n.indexOf(h) >= 0) sc += 3; });
     VOICE_CUTE.forEach(function(h){ if(n.indexOf(h) >= 0) sc += 3; });
-    VOICE_HARD.forEach(function(h){ if(n.indexOf(h) >= 0) male = true; });
     if(/natural|neural|online/.test(n)) sc += 4;
-    if(/zh-cn|cmn-hans|mainland/.test(((v.lang || '') + ' ' + n).toLowerCase())) sc += 1;
-    return { v: v, s: sc, male: male };
+    if(/^(zh-cn|zh-hans|cmn|zh-sg)/.test(String(v.lang || '').toLowerCase())) sc += 2;
+    if(/xiaoxiao|晓晓/.test(n)) sc += 5;
+    return { v: v, s: sc };
   }).sort(function(a, b){ return b.s - a.s; });
-  const good = scored.filter(function(x){ return !x.male; });
-  VOICE_LIST = (good.length ? good : scored).map(function(x){ return x.v; });
+  VOICE_LIST = scored.map(function(x){ return x.v; });
   if(VOICE_PICK >= VOICE_LIST.length) VOICE_PICK = 0;
   updateSpeakBtns();
 }
@@ -2216,8 +2225,8 @@ function updateSpeakBtns(){
   if(vr) vr.textContent = VOICE_RATE.toFixed(1) + '×';
   const vt = document.getElementById('voiceTone');
   if(vt){
-    vt.textContent = VOICE_LIST.length ? voiceShort(VOICE_LIST[VOICE_PICK]) : '音色';
-    vt.title = VOICE_LIST.length ? (VOICE_LIST[VOICE_PICK].name || '当前音色') + '（点击切换）' : '未检测到中文音色，请检查系统语音包';
+    vt.textContent = VOICE_LIST.length ? voiceShort(VOICE_LIST[VOICE_PICK]) : '普通话';
+    vt.title = VOICE_LIST.length ? (VOICE_LIST[VOICE_PICK].name || '当前音色') + '（普通话 · 点击切换）' : '未检测到普通话音色：请用 Edge／Chrome 打开，或在系统里安装「Microsoft 晓晓」语音包';
   }
 }
 function voiceSegments(article){
@@ -2235,10 +2244,10 @@ function voiceSegments(article){
       let cut = s.lastIndexOf('，', 110);
       if(cut < 40) cut = s.lastIndexOf('、', 110);
       if(cut < 40) cut = 110;
-      out.push({ text: s.slice(0, cut + 1), gap: 170 });
+      out.push({ text: s.slice(0, cut + 1), gap: 220 });
       s = s.slice(cut + 1).trim();
     }
-    if(s) out.push({ text: s, gap: /[。！？!?]$/.test(s) ? 320 : (/[；;]$/.test(s) ? 200 : 240) });
+    if(s) out.push({ text: s, gap: /[。！？!?]$/.test(s) ? 420 : (/[；;]$/.test(s) ? 280 : 320) });
   }
   return out;
 }
