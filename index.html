@@ -1204,6 +1204,24 @@ function askKind(q){
   for(let i=0;i<ASK_KINDS.length;i++){ if(ASK_KINDS[i].re.test(qn)) return ASK_KINDS[i]; }
   return {id:'def', lb:'概念解释', re:null};
 }
+/* 能否作答：与正式作答同一套实体判定，答不出就一定落兜底——用于筛掉「点了却答不上」的提示 */
+function canAnswer(q){
+  try{
+    const r = rank(q, null);
+    const intent = classify(q);
+    const FOREIGN = /法国|英国|美国|德国|日本|意大利|西班牙|葡萄牙|荷兰|埃及|印度|巴西|澳大利亚|俄罗斯/;
+    const foreignShield = FOREIGN.test(q) && !/抗美援朝|朝鲜|苏联|共产国际|长征|党史|新中国|改革开放|香港|澳门|台湾/.test(q);
+    let ent = r.ent;
+    const top = r.rows && r.rows[0];
+    if(!ent && /长征/.test(q) && (intent.id==='num' || /多远|多长|几省|省份|走了|统计/.test(q))){
+      const e0 = KB.find(x=>x.id==='c03'); if(e0) ent = {e:e0, nm:e0.ti};
+    }
+    if(!ent && !foreignShield && top && r.conf>=0.46 && top.s>=6.2 && inDomain(q)) ent = {e:top.e, nm:top.e.ti};
+    return !!ent;
+  }catch(err){ return false; }
+}
+function usableAsks(list){ return (list||[]).filter(function(a){ return a && canAnswer(a); }); }
+
 /* 全局主体：问的是「整条长征」，而不是某一场战斗、某一个人 */
 const GLOBAL_WORDS = ['长征','红军长征','二万五千里','长征全程','长征整体','伟大长征','整个长征','长征路上'];
 const SPECIFIC_C = ['站点','事件','会议','人物','场馆','故事','诗词','知识','数据','作品说明'];
@@ -1254,6 +1272,7 @@ function parasHTML(ps){
   return ps.map(p=>'<p'+rvAttr()+'>'+esc(p)+'</p>').join('');
 }
 function asksHTML(asks){
+  asks = usableAsks(asks);
   if(!asks||!asks.length) return '';
   return '<div class="asks">'+asks.map(a=>'<button data-ask="'+esc(a)+'">'+esc(a)+'</button>').join('')+'</div>';
 }
@@ -2045,7 +2064,10 @@ function setMode(m){
   $('#modeHint').textContent = meta.h;
   $('#personaBar').classList.toggle('on', m==='persona');
   if(m==='persona') renderPersonaBar();
-  $('#chips').innerHTML = meta.chips.map(c=>'<button data-ask="'+esc(c)+'">'+esc(c)+'</button>').join('');
+  const SAFE_CHIPS = ['长征的意义是什么？','湘江战役为什么损失这么大？','遵义会议为什么是转折点？','长征精神是什么？'];
+  let chipsNow = usableAsks(meta.chips);
+  if(chipsNow.length < 3){ SAFE_CHIPS.forEach(function(c){ if(chipsNow.length < 3 && chipsNow.indexOf(c) < 0 && canAnswer(c)) chipsNow.push(c); }); }
+  $('#chips').innerHTML = chipsNow.map(c=>'<button data-ask="'+esc(c)+'">'+esc(c)+'</button>').join('');
   $('#input').placeholder = m==='plan' ? '说说天数、对象和形态，比如「给初中生做 5 天研学」' :
     (m==='persona' ? '问'+ (PERSONAS.find(p=>p.id===state.persona)||PERSONAS[0]).nm +'一个问题…' : '问点什么，比如「湘江战役为什么损失这么大？」');
   if(m==='guide') introGuide();
