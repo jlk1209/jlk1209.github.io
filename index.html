@@ -531,6 +531,8 @@ body.trace-open #traceToggle{color:var(--red);border-bottom-color:var(--red)}
 .vaux button[aria-pressed="true"]{color:var(--red);border-color:rgba(176,37,28,.55);background:rgba(176,37,28,.07)}
 .vaux #voiceRate{min-width:44px;text-align:center}
 .vaux #voiceTone{min-width:56px;text-align:center}
+.vaux #voiceMode{font-size:12px;color:#b09a78;letter-spacing:.04em;padding:0 4px;white-space:nowrap}
+.vaux #voiceTone.warn{color:#d98c5f;border-color:rgba(217,140,95,.55)}
 
 .composer textarea,.composer input{transition:border-color .2s,box-shadow .2s}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -711,7 +713,8 @@ dialog#net .tip{font-size:11px;color:#7a6d59;line-height:1.75;margin-top:12px;pa
           <span id="hintLeft">Enter 发送 · Shift + Enter 换行</span>
           <span class="links">
             <span class="vaux" aria-label="语音播报">
-              <button id="voiceAuto" aria-pressed="true" title="默认开启：每条回答自动朗读">自动播报</button>
+              <span id="voiceMode" title="只播普通话音色 · 音调 0.95 · 默认语速 0.9× · 句末停顿 420 毫秒">普通话 · 柔声</span>
+    <button id="voiceAuto" aria-pressed="true" title="默认开启：每条回答自动朗读">自动播报</button>
               <button id="voiceTone" title="切换朗读音色">音色</button>
               <button id="voiceRate" title="切换朗读语速">1.0×</button>
             </span>
@@ -2340,6 +2343,7 @@ function updateSpeakBtns(){
   const vt = document.getElementById('voiceTone');
   if(vt){
     vt.textContent = VOICE_LIST.length ? voiceShort(VOICE_LIST[VOICE_PICK]) : '普通话';
+    vt.classList.toggle('warn', !VOICE_LIST.length);
     vt.title = VOICE_LIST.length ? (VOICE_LIST[VOICE_PICK].name || '当前音色') + '（普通话 · 点击切换）' : '未检测到普通话音色：请用 Edge／Chrome 打开，或在系统里安装「Microsoft 晓晓」语音包';
   }
 }
@@ -2381,10 +2385,15 @@ function voiceNext(){
   speechSynthesis.speak(u);
 }
 function stopSpeak(){ voiceCancel(); VOICE_ON = false; updateSpeakBtns(); }
+function voiceHint(){
+  setStatus('当前浏览器没有普通话音色，已跳过朗读：请用 Edge 打开，或在系统里安装「Microsoft 晓晓」语音包');
+}
 function speakArticle(article, auto){
   if(!('speechSynthesis' in window)) return;
   if(auto && !VOICE_ARMED) return;
   if(VOICE_ON && !auto){ stopSpeak(); return; }
+  /* 只播普通话：没有普通话音色就不出声，绝不用默认（可能是外语或方言）音色硬读 */
+  if(!VOICE_LIST.length){ if(!auto){ voiceHint(); } return; }
   voiceCancel();
   VOICE_QUEUE = voiceSegments(article);
   if(!VOICE_QUEUE.length) return;
@@ -2403,7 +2412,7 @@ document.addEventListener('click', function(ev){
   const va = ev.target.closest('#voiceAuto');
   if(va){ VOICE_AUTO = !VOICE_AUTO; if(!VOICE_AUTO) stopSpeak(); updateSpeakBtns(); return; }
   const vt = ev.target.closest('#voiceTone');
-  if(vt){ if(VOICE_LIST.length){ VOICE_PICK = (VOICE_PICK + 1) % VOICE_LIST.length; if(VOICE_ON) stopSpeak(); updateSpeakBtns(); } return; }
+  if(vt){ if(VOICE_LIST.length){ VOICE_PICK = (VOICE_PICK + 1) % VOICE_LIST.length; if(VOICE_ON) stopSpeak(); updateSpeakBtns(); } else { voiceHint(); } return; }
   const vr = ev.target.closest('#voiceRate');
   if(vr){ const i = VOICE_RATES.indexOf(VOICE_RATE); VOICE_RATE = VOICE_RATES[(i + 1) % VOICE_RATES.length]; if(VOICE_ON) stopSpeak(); updateSpeakBtns(); }
 });
