@@ -233,6 +233,9 @@ button{font-family:inherit;cursor:pointer}
   display:flex;align-items:center;justify-content:center;font-size:13px;letter-spacing:.06em;
   writing-mode:vertical-rl;text-orientation:upright;line-height:1.2;
 }
+@keyframes p-breathe{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+.msg-persona .ava{animation:p-breathe 5.5s ease-in-out infinite}
+.msg-persona .selfsim{display:inline-block;margin-left:6px;padding:1px 6px;border:1px solid var(--hair);font-size:9.5px;letter-spacing:.08em;color:var(--text-dim);vertical-align:middle}
 .msg-persona .say .nm{font-size:11.5px;letter-spacing:.1em;color:var(--text-dim);margin-bottom:5px}
 .msg-persona .say .nm b{color:var(--ink);font-weight:700;letter-spacing:.06em}
 .msg-persona .say .txt{font-size:14px;line-height:1.95;color:var(--text)}
@@ -680,7 +683,7 @@ dialog#net .tip{font-size:11px;color:#7a6d59;line-height:1.75;margin-top:12px;pa
     <div class="rail-foot">
       <div class="kv"><span>知识库</span><b id="kbStatTop">—</b></div>
       <div class="kv"><span>版本</span><b>KB 3.8</b></div>
-      <div class="kv"><span>功能</span><b>v15 问法扩容 · 6434 条</b></div>
+      <div class="kv"><span>功能</span><b>v16 人物身份模拟 · 6434 条</b></div>
       <div class="kv"><span>运行</span><b>离线可用</b></div>
     </div>
   </aside>
@@ -773,6 +776,7 @@ dialog#net .tip{font-size:11px;color:#7a6d59;line-height:1.75;margin-top:12px;pa
     · <strong>离线／联网双模式</strong>：默认离线，只用内置知识库；联网模式填入自己的 API Key（DeepSeek／Kimi／智谱／通义等 OpenAI 兼容接口）后，在本地检索结果上追加一次大模型改写，标注来源与免责，联网失败自动回退离线结果，Key 只存本机浏览器。<br>
     · <strong>问答卡（v15 扩容）</strong>：每一条长征档案上再挂 6 种问法——「讲讲／咋回事／是啥／最要紧的是什么／为什么要了解／用三句话讲」，正文仍取原档案，检索时一律让位原档案（打分扣 3 分），只承接口语化问法；v12 时是两种问法（1150 条），v15 扩到 6 种共 5152 条，同一件事从 7 个口子都能问进来。<br>
     · <strong>问面语义（v14）</strong>：先判问的是哪一面（意义、胜因、教训、评价、代价、世界影响、讲法、过程等），再按面取条目与字段；「长征的意义」「长征为什么能胜利」「有什么教训」这类整体问题由 8 条总述档案主答，具体地点与人物的提问仍走具体档案。<br>
+    · <strong>人物身份模拟（v16）</strong>：人物对话不再「关键词对不上就呆住」——错字、漏字、口语长句先做模糊匹配；问角色本人（你是谁、多大、怕不怕、想不想家）由角色按身份自述；事件题优先走角色记忆锚点；域外闲聊也用角色口吻转场，不再背「抱歉看不到实时天气」。角色头像带呼吸动画，每轮换动作，不再卡死在原地。<br>
     · <strong>问法归一</strong>：同一问题的不同说法先归一再检索——同义替换表（别称、口语疑问、近义表述，近百组）、条目名自动展开的可能问法索引（一万多条）、无实体名的主题规则，以及闲聊口头版的让位；25 个主题 77 种说法实测全部答到对应条目、0 次兜底。<br>
     · <strong>抗幻觉</strong>：知识库前置、模板后置，生成只做“重组”不做“编造”；每条事实带史料等级（权威史料 / 回忆录记述 / 文学改编）。<br>
     · <strong>多轮记忆</strong>：保留上一轮实体，支持“它为什么重要”“那后来呢”这类省略式追问。<br>
@@ -819,6 +823,7 @@ dialog#net .tip{font-size:11px;color:#7a6d59;line-height:1.75;margin-top:12px;pa
       <tr><td>v13</td><td>普通话柔声</td><td>音色只保留普通话音色，粤语、台湾国语、外语与男声一律自动排除；语速默认 0.9×、音调 0.95、句间停顿加长，朗读更轻更慢；回归 70 条用例全过</td></tr>
       <tr><td>v14</td><td>问面语义</td><td>不再只按关键词作答：先判「问的是哪一面」（意义、胜因、教训、评价、代价、世界影响、讲法、过程、数字、时间、人物、故事、概念）再决定取哪条档案、取哪几个字段；新增 8 条总述档案专答整条长征；整体题上闲聊与问答卡主动让位；问句级评测 62 条全过、回归 80 条全过；提示条与追问建议只摆答得出来的问题，会落兜底的一律不显示</td></tr>
       <tr><td>v15</td><td>问法扩容</td><td>知识库从 2432 条扩到 6434 条：每条长征档案再挂 6 种问法（讲讲／咋回事／是啥／最要紧的是什么／为什么要了解／用三句话讲），问答卡 1150 → 5152；引擎新增口语问面识别（有啥用、好在哪、苦在哪、咋赢的、凭啥、谁打的、咋回事、说道说道等），同一件事七八个口子都能问进来；回归 85 条用例（T81—T85 专测口语问法）、问句评测 72 条（含 10 条口语与压缩式问法）全过</td></tr>
+      <tr><td>v16</td><td>人物身份模拟</td><td>人物对话大改：编辑距离模糊匹配，错字、漏字、口语长句都能落到具体档案；身份题由角色自述，事件题走角色记忆锚点，域外问题用角色口吻转场，人物板块不再落兜底；头像呼吸动画、每轮动作变化；回归 91 条、问句评测 72 条全过</td></tr>
     </table>
   </div>
 </dialog>
@@ -1073,6 +1078,50 @@ function findEntity(q, forceId, alt){
 function stripQ(s){
   return String(s||'').toLowerCase().replace(/[\s\u3000，。！？、；：“”‘’（）《》,.!?;:'"()\[\]·—…\/\\]/g,'');
 }
+/* v16 · 模糊匹配：错字、漏字、多字、近音写法都能落到同一条档案 */
+function lev(a,b){
+  const m=a.length,n=b.length;
+  if(!m) return n; if(!n) return m;
+  let prev=new Array(n+1), cur=new Array(n+1);
+  for(let j=0;j<=n;j++) prev[j]=j;
+  for(let i=1;i<=m;i++){
+    cur[0]=i; const ca=a.charCodeAt(i-1);
+    for(let j=1;j<=n;j++){
+      const cost = ca===b.charCodeAt(j-1) ? 0 : 1;
+      cur[j]=Math.min(prev[j]+1, cur[j-1]+1, prev[j-1]+cost);
+    }
+    const t=prev; prev=cur; cur=t;
+  }
+  return prev[n];
+}
+function approxMatch(qs){
+  if(!qs || qs.length<3 || qs.length>24) return null;
+  let best=null, bestScore=1e9;
+  KB.forEach(function(e){
+    if(e.dv) return;
+    ([e.ti].concat(e.tg||[])).forEach(function(nm, nmIdx){
+      const n=stripQ(nm);
+      if(!n || n.length<3 || n.length>qs.length+1) return;
+      const lim = n.length<=4 ? 1 : (n.length<=7 ? 2 : 3);
+      if(n.length<=3) return;
+      const lo = Math.max(3, n.length-1), hi = Math.min(qs.length, n.length+1);
+      for(let len=lo; len<=hi; len++){
+        for(let i=0; i+len<=qs.length; i++){
+          const w = qs.substr(i, len);
+          if(w[0] !== n[0]) continue;
+          if(len<=5 && w[len-1] !== n[n.length-1]) continue;
+          const d = lev(n, w);
+          if(d>lim) continue;
+          const score = d*10 + Math.abs(len-n.length) + (qs.length-len)*0.02 + (nmIdx ? 0.4 : 0);
+          if(score<bestScore || (Math.abs(score-bestScore)<0.001 && n.length>stripQ(best?best.nm:'').length)){
+            bestScore=score; best={e:e, nm:nm};
+          }
+        }
+      }
+    });
+  });
+  return best;
+}
 function matchOne(qs){
   if(!qs) return null;
   let best = null;
@@ -1109,6 +1158,10 @@ function matchOne(qs){
       if(e && (!best || nm.length>=stripQ(best.nm).length)) best={e,nm:nm};
     }
   });
+  if(!best){
+    const ap = approxMatch(qs);
+    if(ap) best = ap;
+  }
   return best;
 }
 
@@ -1564,27 +1617,55 @@ function compose(intent, e, q, conf, mode){
   return {html, template, bodyCount:body.length, quote:quote?1:0};
 }
 
-function personaReply(p, e, q, conf){
+function personaReply(p, e, q, conf, selfKind, hedge, kindId){
   resetDelay();
+  const act = actLine(p);
+  if(selfKind){
+    const map = {who:p.intro, age:'我 '+p.age+'，在 '+p.unit+'。', home:'我是'+p.from+'人。',
+                 fear:p.fear, homefeel:p.home, feel:p.feel, food:p.food,
+                 march:p.march, later:p.later, thanks:p.thanks, bye:p.bye};
+    const body = (map[selfKind] || p.intro);
+    const txt = act + '\n\n' + (p.voice && p.voice[0] ? p.voice[0] + '——' : '') + body;
+    const html =
+      '<div class="msg-persona">'+
+        '<div class="ava">'+esc(p.nm)+'</div>'+
+        '<div class="say">'+
+          '<div class="nm"><b>'+esc(p.nm)+'</b> · '+esc(p.age)+' · '+esc(p.unit)+'<span class="selfsim">身份模拟</span></div>'+
+          '<div class="txt">'+ esc(txt).replace(/\n\n/g,'<br><br>') +'</div>'+
+          '<div class="src">身份模拟 · 角色设定与拟人化演绎，不是史料原文；涉及史实仍以知识库条目为准</div>'+
+        '</div>'+
+      '</div>';
+    return {html, template:'T-PERSONA-SELF'};
+  }
+  const firstOpen = !PERSONA_OPENED[p.id];
+  PERSONA_OPENED[p.id] = true;
+  const openTxt = firstOpen ? (p.open||act) : act;
   const shapes = [
     '{open}\n\n{voice}——{y}，{p}。{br}\n\n要说细的：{fph}。这事我一直记着。',
     '{open}\n\n{voice}。{br}\n\n要说数字：{fph}，这不是瞎说，账都在部队里记着。',
-    '{open}\n\n{br}\n\n{voice}——{fph}，你想想这是什么分量。'
+    '{open}\n\n{br}\n\n{voice}——{fph}，你想想这是什么分量。',
+    '{open}\n\n{voice}。你问的这个，我记着的是：{br}\n\n别问我大道理，我就记得当时是这个情形。'
   ];
   const h = (q.length + (p.id.charCodeAt(1)||0)) % shapes.length;
   const fk = (e.ft&&e.ft[0]) ? e.ft[0][0] : '时间';
   const fv = (e.ft&&e.ft[0]) ? e.ft[0][1] : (e.y||'');
   const fph = fk==='时间' ? '时间是 '+fv : fk+' 是 '+fv;
-  const txt = shapes[h]
-    .replace('{open}', p.open||'')
-    .replace('{voice}', p.voice[0]||'')
+  let txt = shapes[h]
+    .replace('{open}', openTxt)
+    .replace('{voice}', (p.voice||[''])[0])
     .replace('{y}', e.y||'').replace('{p}', e.p||'')
     .replace('{br}', e.br||'').replace('{fph}', fph);
+  if(hedge){
+    txt = openTxt + '\n\n' + '你问的这件事，我不敢乱说，怕说错。我记着的是这一件——\n\n' + (e.br||'') + '\n\n要说细的：' + fph + '。';
+  }
+  if((kindId==='meaning'||kindId==='lesson'||kindId==='victory'||kindId==='eval') && e.sg){
+    txt += '\n\n要我说，这件事的分量在这儿：' + e.sg;
+  }
   const html =
     '<div class="msg-persona">'+
       '<div class="ava">'+esc(p.nm)+'</div>'+
       '<div class="say">'+
-        '<div class="nm"><b>'+esc(p.nm)+'</b> · '+esc(p.age)+' · '+esc(p.unit)+'</div>'+
+        '<div class="nm"><b>'+esc(p.nm)+'</b> · '+esc(p.age)+' · '+esc(p.unit)+'<span class="selfsim">身份模拟</span></div>'+
         '<div class="txt">'+ esc(txt).replace(/\n\n/g,'<br><br>') +'</div>'+
         '<div class="src">拟人化演绎，台词不是史料原文 · 史实依据：'+esc(e.ti)+'（'+esc(e.src||'知识库')+'）· '+esc(e.lv||'')+' · 检索置信 '+(conf*100).toFixed(0)+'%</div>'+
       '</div>'+
@@ -1592,10 +1673,112 @@ function personaReply(p, e, q, conf){
   return {html, template:'T-PERSONA'};
 }
 
+/* 人物板块总入口：身份题 → 身份模拟；事件题 → 模糊检索 + 角色记忆锚点；都不落兜底 */
+function personaSmallTalk(p, q, r, intent){
+  const act = actLine(p);
+  const txt = act + '\n\n' + (p.voice||[''])[0] + '——你说的这个，我一个' + p.unit.split('·').pop().trim() + '，真说不上来。\n\n' +
+    '我那会儿只管一件事：跟着队伍走，别掉队，别让身边的人倒下。你要问我路上冷不冷、饿不饿、怕不怕，我倒能说几句。';
+  const html =
+    '<div class="msg-persona">'+
+      '<div class="ava">'+esc(p.nm)+'</div>'+
+      '<div class="say">'+
+        '<div class="nm"><b>'+esc(p.nm)+'</b> · '+esc(p.age)+' · '+esc(p.unit)+'<span class="selfsim">身份模拟</span></div>'+
+        '<div class="txt">'+ esc(txt).replace(/\n\n/g,'<br><br>') +'</div>'+
+        '<div class="src">身份模拟 · 角色设定与拟人化演绎，不是史料原文；域外问题不套用知识库闲聊条目</div>'+
+      '</div>'+
+    '</div>';
+  addHTML(html + asksHTML(['你怕不怕？','你多大？','你当时在湘江吗？']));
+  pushTrace([
+    {n:'01',k:'路由 Agent',v:'模式「人物对话」· 域外问题 → 身份模拟转场',bar:0.8},
+    {n:'02',k:'检索 Agent',v:'不套用闲聊条目 · 交给角色口吻处理'},
+    {n:'03',k:'图谱 Agent',v:'不扩展 · 保持人物在场'},
+    {n:'04',k:'事实核查',v:'不生成事实，只作人物反应',ok:true},
+    {n:'05',k:'生成 Agent',v:'模板 <b>T-PERSONA-SMALLTALK</b>'},
+    {n:'06',k:'守门 Agent',v:'<em>通过</em> · 未编造 · 未兜底',ok:true}
+  ], []);
+  updateStats('1/1 通过');
+  finish('persona');
+}
+function personaAnswer(q, intent, r, conf){
+  const p = PERSONAS.find(x=>x.id===state.persona) || PERSONAS[0];
+  const sk = selfKindOf(q);
+  let e = null, hedge = false;
+  if(!sk && r.ent && (r.ent.e.c==='闲聊'||r.ent.e.c==='通识') && !/长征|红军|遵义|湘江|泸定|草地|赤水|会师|精神/.test(q)){
+    personaSmallTalk(p, q, r, intent); return true;
+  }
+  if(!sk){
+    e = r.ent ? r.ent.e : null;
+    // 人物板块优先具体条目：主题规则命中（nm=问法规则）时，用模糊匹配找更具体的档案
+    const ap0 = approxMatch(stripQ(q));
+    const hintLike = r.ent && /会议|长征|红军|精神|胜利|历史|经过|意义/.test(r.ent.nm||'') && stripQ(r.ent.nm||'').length<=4;
+    if(ap0 && ap0.e.c !== '问答' && hintLike && (!e || ap0.e.id !== e.id)){ e = ap0.e; }
+    if(!e){ e = anchorBest(p, q); hedge = true; }
+    if(!e) return false;
+    if(p.anchors.indexOf(e.id) < 0) hedge = true;
+  }
+  const out = personaReply(p, e, q, sk ? Math.max(conf,0.9) : Math.max(conf,0.4), sk, hedge, intent.kind);
+  addHTML(out.html);
+  if(e) state.lastId = e.id;
+  pushTrace([
+    {n:'01',k:'路由 Agent',v:'模式「人物对话」· '+(sk?'身份模拟题':'问面 '+esc(intent.lb))+' · 角色 <b>'+esc(p.nm)+'</b>',bar:0.9},
+    {n:'02',k:'检索 Agent',v:'实体 <b>'+(e?esc(e.ti):'未识别 → 角色记忆锚点')+'</b> · 模糊匹配 '+(e&&!r.ent?'<b>已启用</b>':'标准')+' · 置信 '+pct(Math.max(conf,0.4)),bar:Math.max(conf,0.4)},
+    {n:'03',k:'图谱 Agent',v:e?('一跳扩展 '+((GRAPH[e.id]||[]).length)+' 条 · 角色锚点 '+(p.anchors.indexOf(e.id)>=0?'命中':(sk?'身份题':'外延'))):'无锚点 · 走身份设定',ok:true},
+    {n:'04',k:'事实核查',v:e?('出处 <b>'+esc(e.src||'知识库')+'</b> · 等级 '+esc(e.lv||'知识库')):'角色设定，非史实',ok:true},
+    {n:'05',k:'生成 Agent',v:'模板 <b>'+out.template+'</b>'+(sk?' · 身份模拟':' · 角色语气 + 史实槽位')},
+    {n:'06',k:'守门 Agent',v:'<em>通过</em> · 人物板块不出兜底 · 演绎与史实分栏标注',ok:true}
+  ], e?[{e:e,s:1}]:[]);
+  updateStats('1/1 通过');
+  finish('persona');
+  return true;
+}
+
 const ACTS = {
-  s01:'（把绑腿又紧了紧）', s02:'（把药箱放在膝上，抬眼看了看你）',
-  s03:'（拿围裙擦了擦手）', s04:'（把烟锅在鞋底上磕了磕）'
+  s01:['（把绑腿又紧了紧）','（把电话机往肩上挪了挪）','（蹲下来，拿树枝在地上给你划路线）'],
+  s02:['（把药箱放在膝上，抬眼看了看你）','（拧开壶盖，倒出一点水给你）','（把你的袖口往上卷了卷，看了看手腕）'],
+  s03:['（拿围裙擦了擦手）','（揭开锅盖，白汽腾起来）','（往灶里添了把柴，火光晃了晃）'],
+  s04:['（把烟锅在鞋底上磕了磕）','（抬起手往山梁那边一指）','（在石头上坐下，拍了拍旁边）'],
+  s05:['（把帽子往上推了推）','（低头看了看手里的电报稿）','（在地图边上站定，手指按住一个点）'],
+  s06:['（把线手套往上拽了拽）','（抬头看了看天）','（把手插进口袋，靠在门框上）']
 };
+let PERSONA_TURN = 0;
+const PERSONA_OPENED = Object.create(null);
+function actLine(p){
+  const a = ACTS[p.id] || ['（点了点头）'];
+  return a[(PERSONA_TURN++) % a.length];
+}
+const SELF_Q = [
+  {k:'who',   re:/你是谁|你叫啥|你叫什么|你是什么人|介绍一下你自己|自我介绍|你哪位/},
+  {k:'age',   re:/多大|几岁|年龄|哪年出生|哪年生的/},
+  {k:'home',  re:/哪里人|哪儿人|老家|家乡|从哪儿来|从哪来/},
+  {k:'fear',  re:/怕不怕|害怕|怕死|恐惧|胆小/},
+  {k:'homefeel', re:/想家|想不想家|家里|父母|亲人|娘/},
+  {k:'feel',  re:/累不累|苦不苦|难不难|撑得住|疼不疼|受得了吗/},
+  {k:'food',  re:/吃什么|吃的啥|伙食|饿不饿|粮食|皮带/},
+  {k:'march', re:/怎么走|走路|行军|脚上|草鞋|带路/},
+  {k:'later', re:/后来呢|后来怎么样|你现在|现在呢|以后/},
+  {k:'thanks',re:/谢谢你|谢谢|辛苦了/},
+  {k:'bye',   re:/再见|我走了|告别|下次/}
+];
+function selfKindOf(q){
+  const qn = stripQ(q);
+  if(!/你/.test(qn)) return null;
+  for(let i=0;i<SELF_Q.length;i++){ if(SELF_Q[i].re.test(qn)) return SELF_Q[i].k; }
+  return null;
+}
+function anchorBest(p, q){
+  const qn = stripQ(q);
+  let best=null, bestS=-1;
+  (p.anchors||[]).forEach(function(id){
+    const e = KB.find(function(x){return x.id===id;});
+    if(!e) return;
+    let sc = 0;
+    if(qn.indexOf(stripQ(e.ti))>=0) sc += 3;
+    (e.tg||[]).forEach(function(t){ const tt=stripQ(t); if(tt.length>=2 && qn.indexOf(tt)>=0) sc += 2; });
+    sc += 1 / (1 + lev(qn, stripQ(e.ti)));
+    if(sc>bestS){ bestS=sc; best=e; }
+  });
+  return best || KB.find(function(x){return x.id===p.anchors[0];}) || null;
+}
 
 /* ---------- 4. 任务规划 ---------- */
 const PLAN_NODE = {
@@ -1970,6 +2153,9 @@ function dispatch(q){
   const foreignShield = FOREIGN.test(q) && !/抗美援朝|朝鲜|苏联|共产国际|长征|党史|新中国|改革开放|香港|澳门|台湾/.test(q);
   // 软匹配：没有名称命中时，要求检索分数足够高才允许作答（防止跨域乱答）
   if(!ent && !foreignShield && top && conf>=0.46 && top.s>=6.2 && inDomain(q)) ent = {e:top.e, nm:top.e.ti};
+
+  // 人物板块：身份模拟 + 角色记忆锚点，先于兜底接管（问不准也答，不摆"无法回答"）
+  if(mode==='persona' && personaAnswer(q, intent, r, conf)) return;
 
   // 兜底
   if(!ent){
@@ -5274,22 +5460,58 @@ const PERSONAS = [
   intro:'江西于都人，1934 年跟着队伍出发时 16 岁，个子还没枪高。背着一部电话机和一卷线，跑起来最快。',
   open:'（把绑腿又紧了紧）同志，你从哪儿来？坐下说吧，我这刚歇脚。',
   anchors:['n01','n02','n04','n05','n08','p04'],
-  voice:['我给你说个实在的','不哄你','那会儿我一个通信员，啥也不懂，就跟着走']},
+  voice:['我给你说个实在的','不哄你','那会儿我一个通信员，啥也不懂，就跟着走'],
+  from:'江西于都',
+  fear:'怕。可通信员不能怕——线一断，全团就成聋子瞎子。',
+  home:'想家，想于都河边那间屋。可队伍一天天往西，回去的路我先记在心里。',
+  feel:'累，脚上全是泡。歇一晚，第二天照样得跑，线不等人。',
+  food:'有啥吃啥。煮过皮带，也啃过树皮，能咽下去就算一顿。',
+  march:'我跟着电话线走。前面打到哪，我就往哪钻。',
+  later:'后来很多人没走到陕北。我替他们记着，名字记不全，事记着。',
+  thanks:'谢啥。你肯坐下听我说，就够了。',
+  bye:'走吧，路上当心，别掉队。'},
  {id:'s02',nm:'何大姐',tag:'何',age:'24 岁',unit:'红一方面军 · 随军卫生员',
   intro:'湖南人，出发前是乡村护士。长征路上管三个药箱、一副担架，最见不得年轻战士逞强不喊疼。',
   open:'（把药箱放在膝上）先坐下，把手伸出来我看看——路上伤着的，可不止你一个。',
   anchors:['n02','n09','n10','s01','c02'],
-  voice:['你别硬撑','这不算什么大伤，可也不能拖','我见过太多逞强的人']},
+  voice:['你别硬撑','这不算什么大伤，可也不能拖','我见过太多逞强的人'],
+  from:'湖南',
+  fear:'怕。可药箱在我手上，我要是慌了，伤员怎么办。',
+  home:'想。出来时答应娘要回去，这话我记了两年。',
+  feel:'累，可我不能喊累。我一坐下，抬担架的人就没底了。',
+  food:'先紧着伤员。我们喝稀的，把稠的留给他们。',
+  march:'跟着伤员走。谁走不动，我就把担架绳往肩上再挪一寸。',
+  later:'后来我带出来的药箱空了，人也没剩几个。可我学会一件事：先救人。',
+  thanks:'不用谢我，把伤养好，就是谢我。',
+  bye:'回去记得换药。别逞强。'},
  {id:'s03',nm:'老班长',tag:'班',age:'38 岁',unit:'红四方面军 · 炊事班',
   intro:'四川人，一口大锅背了两年。会煮皮带，会给病号留最后一碗糊糊，也会在草地上讲笑话让人不想倒下。',
   open:'（拿围裙擦了擦手）来得正好，锅里还有点。别嫌少，先吃。',
   anchors:['n10','s02','s03','n09','c02'],
-  voice:['我说句实在话','锅里有啥就吃啥','饿着肚子，走不了路']},
+  voice:['我说句实在话','锅里有啥就吃啥','饿着肚子，走不了路'],
+  from:'四川',
+  fear:'怕过。锅要是丢了，全连就得饿着走。',
+  home:'想。可一口锅跟着队伍走了两年，它也算家当。',
+  feel:'累。可我一说累，年轻人就更走不动了。',
+  food:'锅里有啥就吃啥。草地上煮皮带，得先泡软，再慢慢熬。',
+  march:'我走在队伍后头，捡掉队的，收锅，最后一口糊糊留给病号。',
+  later:'后来锅还在，人换了一茬又一茬。我就记着一句：别让谁饿着倒下。',
+  thanks:'谢啥，锅里还有点，吃了再走。',
+  bye:'路上饿了就回来，锅还热着。'},
  {id:'s04',nm:'张老汉',tag:'张',age:'52 岁',unit:'陕北赤卫队 · 向导',
   intro:'吴起镇人，1935 年秋天在山梁上第一次看见穿灰军装、戴八角帽的队伍。后来他给队伍带路、送粮，也守着纪念园讲了一辈子。',
   open:'（把烟锅在鞋底上磕了磕）你们来啦——这山上风大，先喝口热的。',
   anchors:['n12','n13','c03','n11','k02'],
-  voice:['那年秋天','咱这儿的老辈人都记得','我给你们指个地方']}
+  voice:['那年秋天','咱这儿的老辈人都记得','我给你们指个地方'],
+  from:'陕北吴起镇',
+  fear:'不怕。这山这沟我熟，怕的是队伍找不到路。',
+  home:'这就是我家。吴起镇的山梁，我守了一辈子。',
+  feel:'累啥，我走了一辈子山路。你们年轻人脚上起泡，我给你们挑。',
+  food:'家里有洋芋，有小米。队伍来了，先紧着队伍吃。',
+  march:'我走前头。哪条沟能过人，哪道梁能歇脚，我指给你们。',
+  later:'后来我在纪念园讲了一辈子，讲那年秋天山梁上看见的队伍。',
+  thanks:'谢啥，你们来了，这山上就热闹。',
+  bye:'慢走。下回再来，我还在这儿。'}
 ];
 </script>
 <script>
